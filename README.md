@@ -18,7 +18,7 @@ This extension is modified from [vscode-3d-preview](https://github.com/tatsy/vsc
 ![mesh](demo.png)
 
 ## Development
-Install Node.js and npm first, then clone this repo and:
+Install `Node.js` and `npm` first, then clone this repo and:
 
 ```bash
 # install dependencies
@@ -27,7 +27,8 @@ npm install
 # use F5 or the dubugger panel to start debugging (will open a new VSCode window with this extension enabled.)
 # Help->Toggle Developer Tools (or Shift-Control-I) to see console output.
 
-# publish (requires vsce and personal access token)
+# publish (requires vsce, a publisher as defined in package.json, and the personal access token)
+# first change version in package.json
 vsce publish
 ```
 
