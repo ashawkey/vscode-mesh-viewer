@@ -15,7 +15,11 @@ This extension is modified from [vscode-3d-preview](https://github.com/tatsy/vsc
 
 #### Mesh preview
 
-![mesh](demo.png)
+<video controls>
+  <source src="assets/demo.mp4" type="video/mp4">
+</video>
+
+![mesh](assets/demo.png)
 
 ## Development
 Install `Node.js` and `npm` first, then clone this repo and:
