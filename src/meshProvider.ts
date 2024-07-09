@@ -88,8 +88,9 @@ export class MeshViewProvider implements vscode.CustomReadonlyEditorProvider<Mes
     const initialData = {
       fileToLoad: uri.toString(),
       hideControlsOnStart: config.get('hideControlsOnStart', false),
-      fovy: config.get('fovy', 45),
+      FovY: config.get('FovY', 45),
       backgroundColor: config.get('backgroundColor', '#0b1447'),
+      meshColor: config.get('meshColor', '#ffffff'),
       showMesh: config.get('showMesh', true),
       showWireframe: config.get('showWireframe', false),
       showGrid: config.get('showGrid', false),
@@ -97,6 +98,7 @@ export class MeshViewProvider implements vscode.CustomReadonlyEditorProvider<Mes
       wireframeColor: config.get('wireframeColor', '#0000ff'),
       wireframeWidth: config.get('wireframeWidth', 1),
       lightIntensity: config.get('lightIntensity', 1),
+      doubleSide: config.get('doubleSide', true),
     };
     return `<meta id="vscode-3dviewer-data" data-settings="${JSON.stringify(initialData).replace(/"/g, '&quot;')}">`;
   }
@@ -113,10 +115,11 @@ export class MeshViewProvider implements vscode.CustomReadonlyEditorProvider<Mes
       this.getMediaWebviewUri(webview, 'three/dat.gui.min.js'),
       this.getMediaWebviewUri(webview, 'three/stats.min.js'),
       this.getMediaWebviewUri(webview, 'three/OrbitControls.js'),
-      // this.getMediaWebviewUri(webview, 'three/loaders/LoaderSupport.js'),
       this.getMediaWebviewUri(webview, 'three/loaders/OBJLoader.js'),
       this.getMediaWebviewUri(webview, 'three/loaders/PLYLoader.js'),
       this.getMediaWebviewUri(webview, 'three/loaders/GLTFLoader.js'),
+      this.getMediaWebviewUri(webview, 'three/loaders/FBXLoader.js'),
+      this.getMediaWebviewUri(webview, 'three/fflate.min.js'),
       this.getMediaWebviewUri(webview, 'viewer.js'),
     ];
     return scripts.map(source => `<script nonce="${nonce}" src="${source}"></script>`).join('\n');

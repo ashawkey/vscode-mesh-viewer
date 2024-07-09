@@ -12,8 +12,8 @@
 
 
 This extension is modified from [vscode-3d-preview](https://github.com/tatsy/vscode-3d-preview) with the following features:
-* Preview meshes in GLB/GLTF/OBJ/PLY formats with texture.
-* Play GLB/GLTF animations.
+* Preview meshes in FBX/GLB/GLTF/OBJ/PLY formats with texture.
+* Play FBX/GLB/GLTF animations.
 * Default to white background.
 
 ### Install
@@ -21,7 +21,7 @@ This extension is modified from [vscode-3d-preview](https://github.com/tatsy/vsc
 
 Search in Marketplace: [mesh-viewer](https://marketplace.visualstudio.com/items?itemName=kiui.mesh-viewer).
 
-<img src="assets/install.jpg" alt="install" width="200"/>
+<img src="assets/install.jpg" alt="install" width="400"/>
 
 ### Mesh preview
 

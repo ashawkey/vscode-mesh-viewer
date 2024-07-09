@@ -3,12 +3,12 @@
   "publisher": "kiui",
   "displayName": "mesh-viewer",
   "description": "VS Code 3D Mesh Viewer",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "icon": "logo.webp",
-  "homepage": "https://github.com/ashawkey/mesh-viewer",
+  "homepage": "https://github.com/ashawkey/vscode-mesh-viewer",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ashawkey/mesh-viewer"
+    "url": "https://github.com/ashawkey/vscode-mesh-viewer"
   },
   "engines": {
     "vscode": "^1.73.1"
@@ -21,6 +21,7 @@
     "ply",
     "glb",
     "gltf",
+    "fbx",
     "mesh"
   ],
   "activationEvents": [
@@ -49,6 +50,9 @@
           },
           {
             "filenamePattern": "*.gltf"
+          },
+          {
+            "filenamePattern": "*.fbx"
           }
         ]
       }
@@ -61,7 +65,7 @@
           "default": false,
           "description": "Fold the control panel if true is specified."
         },
-        "meshviewer.fovy": {
+        "meshviewer.FovY": {
           "type": "number",
           "default": 45,
           "description": "Field of view in degrees."
@@ -91,6 +95,11 @@
           "default": "#ffffff",
           "description": "Default background color."
         },
+        "meshviewer.meshColor": {
+          "type": "string",
+          "default": "#ffffff",
+          "description": "Default mesh face color."
+        },
         "meshviewer.wireframeColor": {
           "type": "string",
           "default": "#000000",
@@ -105,6 +114,11 @@
           "type": "number",
           "default": 1,
           "description": "Light intensity."
+        },
+        "meshviewer.doubleSide": {
+          "type": "boolean",
+          "default": true,
+          "description": "Double side material."
         }
       }
     }
