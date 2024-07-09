@@ -8,7 +8,7 @@ class Viewer {
     this.params.play_animation = true;
     
     // init renderer
-    this.renderer = new THREE.WebGLRenderer({alpha: true, antialias: true });
+    this.renderer = new THREE.WebGLRenderer({powerPreference: 'high-performance', precision: 'mediump', alpha: true, antialias: true}); // antialias can be disabled to improve performance
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -47,7 +47,7 @@ class Viewer {
       } else if (fileExt === 'ply') {
         object.computeVertexNormals();
         var material = new THREE.MeshStandardMaterial({
-          color: 0xefefef,
+          color: 0xefefef, // default grey
           roughness: 0.1,
           flatShading: true,
           side: THREE.DoubleSide
