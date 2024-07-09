@@ -1,8 +1,6 @@
 class Viewer {
 
   constructor() {
-
-    console.log('[INFO] Viewer constructor');
     
     // init params from vscode settings
     this.params = JSON.parse(document.getElementById('vscode-3dviewer-data').getAttribute('data-settings'));
@@ -13,8 +11,8 @@ class Viewer {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
 
     this.scene = new THREE.Scene();
-    this.meshes = new Array();
-    this.wireframes = new Array();
+    this.rootObject = null;
+    this.wireObject = null;
     this.scene.background = new THREE.Color(this.params.backgroundColor);
 
     // light
@@ -33,10 +31,11 @@ class Viewer {
     }
 
     loader.load(this.params.fileToLoad, function (object) {
+
       if (fileExt === 'glb' || fileExt === 'gltf') {        
-        this.scene.add(object.scene);
+        this.rootObject = object.scene;
       } else if (fileExt === 'obj') {
-        this.scene.add(object);
+        this.rootObject = object;
       } else if (fileExt === 'ply') {
         object.computeVertexNormals();
         var material = new THREE.MeshStandardMaterial({
@@ -45,14 +44,38 @@ class Viewer {
           flatShading: true,
           side: THREE.DoubleSide
         });
-        const mesh = new THREE.Mesh(object, material);
-        this.scene.add(mesh);
+        this.rootObject = new THREE.Mesh(object, material);
       }
+      this.rootObject.visible = this.params.showMesh;
+      this.scene.add(this.rootObject);
+
+      // traverse and set double side material
+      this.rootObject.traverse(function (child) {
+        if (child instanceof THREE.Mesh) {
+          child.material.side = THREE.DoubleSide;
+        }
+      }.bind(this));
+
+      // copy rootObject as wireframes
+      this.wireObject = this.rootObject.clone();
+      this.wireObject.traverse(function (child) {
+        if (child instanceof THREE.Mesh) {
+          child.material = new THREE.MeshStandardMaterial({
+            color: this.params.wireframeColor,
+            roughness: 0.1,
+            flatShading: true,
+            side: THREE.DoubleSide,
+            wireframe: true,
+            wireframeLinewidth: this.params.wireframeWidth,
+          });
+        }
+      }.bind(this));
+      this.wireObject.visible = this.params.showWireframe;
+      this.scene.add(this.wireObject);
 
       // init geometry related params
       this.bbox = new THREE.Box3().setFromObject(this.scene);
       this.center = this.bbox.getCenter(new THREE.Vector3());
-      console.log('[INFO] center:', this.center, this.bbox);
       
       var cx = (this.bbox.max.x - this.bbox.min.x);
       var cy = (this.bbox.max.y - this.bbox.min.y);
@@ -82,52 +105,23 @@ class Viewer {
       this.axisHelper.name = 'axisHelper';
       this.scene.add(this.axisHelper);
       
-      this.gridHelper = new THREE.GridHelper(this.params.gridUnit * 100, 100);
+      this.gridHelper = new THREE.GridHelper(this.params.gridUnit * 10, 10);
       this.gridHelper.visible = this.params.showGrid;
       this.gridHelper.name = 'gridHelper';
       this.scene.add(this.gridHelper);
 
-      // traverse scene to record meshes
-      this.scene.traverse(function (child) {
-        if (child instanceof THREE.Mesh) {
-          this.meshes.push(child); // no copy, just reference
-          child.material.side = THREE.DoubleSide;
-        }
-      }.bind(this));
-
-      // for each mesh, add its wireframe (as a separate mesh)
-      this.meshes.forEach(function (mesh) {
-        var wiremat = new THREE.MeshStandardMaterial({
-          color: this.params.wireframeColor,
-          roughness: 0.1,
-          flatShading: true,
-          side: THREE.DoubleSide,
-          wireframe: true,
-          wireframeLinewidth: this.params.wireframeWidth,
-        }); 
-        var wireframe = new THREE.Mesh(mesh.geometry, wiremat);
-        wireframe.visible = this.params.showWireframe;
-        this.wireframes.push(wireframe); // no copy, just reference
-        this.scene.add(wireframe);
-      }.bind(this));
-
-
-      // init GUI and helpers
+      // init GUI
       this.stats = new Stats();
       this.stats.showPanel(0);
       this.gui = new dat.GUI();
       this.gui.addColor(this.params, 'backgroundColor').name('Background color').onChange(v => this.scene.background = new THREE.Color(v));
-      this.gui.add(this.params, 'fovy', 0.001, 180).onChange(v => {
-          this.camera.fov = v;
-          this.camera.updateProjectionMatrix();
-      });
+      this.gui.add(this.params, 'lightIntensity', 0, 3).name('Light intensity').onChange(v => this.light.intensity = v);
+      this.gui.add(this.params, 'fovy', 0.001, 180).onChange(v => {this.camera.fov = v; this.camera.updateProjectionMatrix(); });
       this.gui.add(this.params, 'showAxis').name('showAxis').onChange(v => this.axisHelper.visible = v);
       this.gui.add(this.params, 'showGrid').name('showGrid').onChange(v => this.gridHelper.visible = v);
-      this.gui.add(this.params, 'showMesh').name('showMesh').onChange(v => this.meshes.forEach(function (mesh) { mesh.visible = v; }.bind(this)));
-      this.gui.add(this.params, 'showWireframe').name('showWireframe').onChange(v => this.wireframes.forEach(function (wireframe) { wireframe.visible = v; }.bind(this)));
-      this.gui.addColor(this.params, 'wireframeColor').name('Wireframe color').onChange(v => this.wireframes.forEach(function (wireframe) { wireframe.material.color = new THREE.Color(v); }.bind(this)));
-      this.gui.add(this.params, 'wireframeWidth', 0.1, 10).name('Wireframe width').onChange(v => this.wireframes.forEach(function (wireframe) { wireframe.material.wireframeLinewidth = v; }.bind(this)));
-      this.gui.add(this.params, 'lightIntensity', 0, 3).name('Light intensity').onChange(v => this.light.intensity = v);
+      this.gui.add(this.params, 'showMesh').name('showMesh').onChange(v => this.rootObject.visible = v);
+      this.gui.add(this.params, 'showWireframe').name('showWireframe').onChange(v => this.wireObject.visible = v);
+      this.gui.addColor(this.params, 'wireframeColor').name('Wireframe color').onChange(v => this.wireObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.color = new THREE.Color(v); }}));
 
       if (this.params.hideControlsOnStart) {
         this.gui.close();

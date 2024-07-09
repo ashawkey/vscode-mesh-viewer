@@ -83,12 +83,6 @@ export class MeshViewProvider implements vscode.CustomReadonlyEditorProvider<Mes
     });
   }
 
-  private getMediaWebviewUri(webview: vscode.Webview, filePath: string): vscode.Uri {
-    return webview.asWebviewUri(vscode.Uri.file(
-      path.join(this._context.extensionPath, 'media', filePath)
-    ));
-  }
-
   private getSettings(uri: vscode.Uri): string {
     const config = vscode.workspace.getConfiguration('meshviewer');
     const initialData = {
@@ -107,13 +101,19 @@ export class MeshViewProvider implements vscode.CustomReadonlyEditorProvider<Mes
     return `<meta id="vscode-3dviewer-data" data-settings="${JSON.stringify(initialData).replace(/"/g, '&quot;')}">`;
   }
 
+  private getMediaWebviewUri(webview: vscode.Webview, filePath: string): vscode.Uri {
+    return webview.asWebviewUri(vscode.Uri.file(
+      path.join(this._context.extensionPath, 'media', filePath)
+    ));
+  }
+
   private getScripts(webview: vscode.Webview, nonce: string): string {
     const scripts = [
       this.getMediaWebviewUri(webview, 'three/three.min.js'),
       this.getMediaWebviewUri(webview, 'three/dat.gui.min.js'),
       this.getMediaWebviewUri(webview, 'three/stats.min.js'),
       this.getMediaWebviewUri(webview, 'three/OrbitControls.js'),
-      this.getMediaWebviewUri(webview, 'three/loaders/LoaderSupport.js'),
+      // this.getMediaWebviewUri(webview, 'three/loaders/LoaderSupport.js'),
       this.getMediaWebviewUri(webview, 'three/loaders/OBJLoader.js'),
       this.getMediaWebviewUri(webview, 'three/loaders/PLYLoader.js'),
       this.getMediaWebviewUri(webview, 'three/loaders/GLTFLoader.js'),
