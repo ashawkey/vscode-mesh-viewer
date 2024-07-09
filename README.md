@@ -1,4 +1,4 @@
-# VSCode 3D Viewer Light
+# VSCode 3D Mesh Viewer
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/kiui.mesh-viewer)](https://marketplace.visualstudio.com/items?itemName=kiui.mesh-viewer)
