@@ -1,19 +1,29 @@
-# VSCode 3D Mesh Viewer
+<p align="center">
+    <picture>
+    <img alt="logo" src="logo.webp" width="20%">
+    </picture>
+    </br>
+    <b>VS Code Mesh Viewer</b>
+</p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/kiui.mesh-viewer)](https://marketplace.visualstudio.com/items?itemName=kiui.mesh-viewer)
 ![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/kiui.mesh-viewer)
 
-Marketplace: [kiui.mesh-viewer](https://marketplace.visualstudio.com/items?itemName=kiui.mesh-viewer)
-
-## Description
 
 This extension is modified from [vscode-3d-preview](https://github.com/tatsy/vscode-3d-preview) with the following features:
 * Preview meshes in GLB/GLTF/OBJ/PLY formats with texture.
 * Play GLB/GLTF animations.
 * Default to white background.
 
-#### Mesh preview
+### Install
+
+
+Search in Marketplace: [mesh-viewer](https://marketplace.visualstudio.com/items?itemName=kiui.mesh-viewer).
+
+<img src="assets/install.jpg" alt="install" width="200"/>
+
+### Mesh preview
 
 <video controls>
   <source src="assets/demo.mp4" type="video/mp4">
