@@ -29,6 +29,10 @@ Search in Marketplace: [mesh-viewer](https://marketplace.visualstudio.com/items?
   <source src="assets/demo.mp4" type="video/mp4">
 </video>
 
+https://github.com/ashawkey/vscode-mesh-viewer/assets/25863658/f12653eb-be65-43de-9f9e-97d89b96c7f5
+
+Credits to ["Kgirls01" (https://skfb.ly/6CIGK) by nuulbee is licensed under CC Attribution-NonCommercial-NoDerivs (http://creativecommons.org/licenses/by-nc-nd/4.0/)](https://sketchfab.com/3d-models/kgirls01-d2f946f58a8040ae993cda70c97b302c).
+
 ![mesh](assets/demo.png)
 
 ## Development
