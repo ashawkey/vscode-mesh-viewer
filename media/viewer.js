@@ -4,6 +4,8 @@ class Viewer {
     
     // init params from vscode settings
     this.params = JSON.parse(document.getElementById('vscode-3dviewer-data').getAttribute('data-settings'));
+    // other settings that will not be exposed to vscode
+    this.params.play_animation = true;
     
     // init renderer
     this.renderer = new THREE.WebGLRenderer({alpha: true, antialias: true });
@@ -11,6 +13,8 @@ class Viewer {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
 
     this.scene = new THREE.Scene();
+    this.clock = new THREE.Clock();
+    this.mixer = null;
     this.rootObject = null;
     this.wireObject = null;
     this.scene.background = new THREE.Color(this.params.backgroundColor);
@@ -34,6 +38,10 @@ class Viewer {
 
       if (fileExt === 'glb' || fileExt === 'gltf') {        
         this.rootObject = object.scene;
+        if (object.animations.length > 0) {
+          this.mixer = new THREE.AnimationMixer(this.rootObject);
+          this.mixer.clipAction(object.animations[0]).play();
+        }
       } else if (fileExt === 'obj') {
         this.rootObject = object;
       } else if (fileExt === 'ply') {
@@ -117,6 +125,9 @@ class Viewer {
       this.gui.addColor(this.params, 'backgroundColor').name('Background color').onChange(v => this.scene.background = new THREE.Color(v));
       this.gui.add(this.params, 'lightIntensity', 0, 3).name('Light intensity').onChange(v => this.light.intensity = v);
       this.gui.add(this.params, 'fovy', 0.001, 180).onChange(v => {this.camera.fov = v; this.camera.updateProjectionMatrix(); });
+      if (this.mixer) {
+        this.gui.add(this.params, 'play_animation').name('Play animation').onChange(v => {v ? this.clock.start() : this.clock.stop();});
+      }
       this.gui.add(this.params, 'showAxis').name('showAxis').onChange(v => this.axisHelper.visible = v);
       this.gui.add(this.params, 'showGrid').name('showGrid').onChange(v => this.gridHelper.visible = v);
       this.gui.add(this.params, 'showMesh').name('showMesh').onChange(v => this.rootObject.visible = v);
@@ -137,12 +148,14 @@ class Viewer {
 
     }.bind(this));
     
-    
   }
 
   animate() {
     requestAnimationFrame(this.animate.bind(this));
     this.controls.update();
+    if (this.mixer && this.params.play_animation) {
+      this.mixer.update(this.clock.getDelta());
+    }
     this.renderer.setRenderTarget(null);
     this.renderer.render(this.scene, this.camera);
     this.stats.update();

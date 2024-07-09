@@ -9,8 +9,9 @@ Marketplace: [kiui.mesh-viewer](https://marketplace.visualstudio.com/items?itemN
 ## Description
 
 This extension is modified from [vscode-3d-preview](https://github.com/tatsy/vscode-3d-preview) with the following features:
-* Preview meshes in GLB/GLTF/OBJ/PLY formats.
-* Defaults to white background.
+* Preview meshes in GLB/GLTF/OBJ/PLY formats with texture.
+* Play GLB/GLTF animations.
+* Default to white background.
 
 #### Mesh preview
 
