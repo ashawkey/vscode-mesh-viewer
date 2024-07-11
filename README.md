@@ -15,6 +15,7 @@ This extension is modified from [vscode-3d-preview](https://github.com/tatsy/vsc
 * Preview meshes in FBX/GLB/GLTF/OBJ/PLY formats with texture.
 * Play FBX/GLB/GLTF animations.
 * Default to white background.
+* Depth/Normal rendering.
 
 ### Install
 
