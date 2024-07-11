@@ -88,7 +88,7 @@ export class MeshViewProvider implements vscode.CustomReadonlyEditorProvider<Mes
     const initialData = {
       fileToLoad: uri.toString(),
       hideControlsOnStart: config.get('hideControlsOnStart', false),
-      FovY: config.get('FovY', 45),
+      cameraFovy: config.get('cameraFovy', 45),
       backgroundColor: config.get('backgroundColor', '#0b1447'),
       meshColor: config.get('meshColor', '#ffffff'),
       showMesh: config.get('showMesh', true),
@@ -99,6 +99,10 @@ export class MeshViewProvider implements vscode.CustomReadonlyEditorProvider<Mes
       wireframeWidth: config.get('wireframeWidth', 1),
       lightIntensity: config.get('lightIntensity', 1),
       doubleSide: config.get('doubleSide', true),
+      playAnimation: config.get('playAnimation', true),
+      renderMode: config.get('renderMode', 'color'),
+      cameraNear: config.get('cameraNear', -1),
+      cameraFar: config.get('cameraFar', 1000),
     };
     return `<meta id="vscode-3dviewer-data" data-settings="${JSON.stringify(initialData).replace(/"/g, '&quot;')}">`;
   }

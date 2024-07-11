@@ -2,13 +2,17 @@ class Viewer {
 
   constructor() {
     
-    // init params from vscode settings
+    // init params from vscode settings (see package.json and src/meshProvider.ts)
     this.params = JSON.parse(document.getElementById('vscode-3dviewer-data').getAttribute('data-settings'));
-    // other settings that will not be exposed to vscode
-    this.params.play_animation = true;
     
     // init renderer
-    this.renderer = new THREE.WebGLRenderer({powerPreference: 'high-performance', precision: 'mediump', alpha: true, antialias: true}); // antialias can be disabled to improve performance
+    this.renderer = new THREE.WebGLRenderer({
+      powerPreference: 'high-performance', 
+      precision: 'mediump', 
+      alpha: true, 
+      antialias: true,
+      // logarithmicDepthBuffer: true,
+    }); // antialias can be disabled to improve performance
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -20,7 +24,7 @@ class Viewer {
     this.scene.background = new THREE.Color(this.params.backgroundColor);
 
     // light
-    this.light = new THREE.HemisphereLight(0xaaaaaa, 0x333333, this.params.lightIntensity);
+    this.light = new THREE.HemisphereLight(0xcccccc, 0x333333, this.params.lightIntensity);
     this.scene.add(this.light);
 
     // load mesh and all other stuff after loading
@@ -69,9 +73,15 @@ class Viewer {
       this.rootObject.traverse(function (child) {
         if (child instanceof THREE.Mesh) {
           child.material.side = this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide;
-          if ('color' in child.material) {
-            child.material.color = new THREE.Color(this.params.meshColor);
-          }
+          child.material.color = new THREE.Color(this.params.meshColor);
+          // support multiple materials to switch
+          child.color_material = child.material;
+          child.normal_material = new THREE.MeshNormalMaterial({
+            side: this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
+          });
+          child.depth_material = new THREE.MeshDepthMaterial({
+            side: this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
+          });
         }
       }.bind(this));
 
@@ -103,7 +113,10 @@ class Viewer {
       this.params.gridUnit = Math.pow(10, Math.floor(Math.log10(this.extent)));
      
       // init camera
-      this.camera = new THREE.PerspectiveCamera(this.params.FovY, window.innerWidth / window.innerHeight, 0.1, 5000.0);
+      if (this.params.cameraNear < 0) {
+        this.params.cameraNear = this.extent; // auto calculate suitable near
+      }
+      this.camera = new THREE.PerspectiveCamera(this.params.cameraFovy, window.innerWidth / window.innerHeight, this.params.cameraNear, this.params.cameraFar);
       var cameraPos = new THREE.Vector3(
         this.extent + this.center.x, 
         this.extent + this.center.y, 
@@ -135,12 +148,23 @@ class Viewer {
       this.stats.showPanel(0);
       this.gui = new dat.GUI();
       this.gui.addColor(this.params, 'backgroundColor').name('Background color').onChange(v => this.scene.background = new THREE.Color(v));
-      this.gui.addColor(this.params, 'meshColor').name('Mesh color').onChange(v => this.rootObject.traverse(function (child) { if (child instanceof THREE.Mesh && 'color' in child.material ) { child.material.color = new THREE.Color(v); }}));
+      this.gui.addColor(this.params, 'meshColor').name('Mesh color').onChange(v => this.rootObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.color = new THREE.Color(v); }}));
       this.gui.add(this.params, 'lightIntensity', 0, 3).name('Light intensity').onChange(v => this.light.intensity = v);
-      this.gui.add(this.params, 'FovY', 0.001, 180).onChange(v => {this.camera.fov = v; this.camera.updateProjectionMatrix(); });
+      this.gui.add(this.params, 'cameraFovy', 0.001, 180).onChange(v => {this.camera.fov = v; this.camera.updateProjectionMatrix(); });
       this.gui.add(this.params, 'doubleSide').name('Double side').onChange(v => this.rootObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.side = v ? THREE.DoubleSide : THREE.FrontSide; }}));
+      this.gui.add(this.params, 'cameraNear', 0.001, 10).name('Camera near').onChange(v => {this.camera.near = v; this.camera.updateProjectionMatrix(); });
+      this.gui.add(this.params, 'cameraFar', 0.1, 1000).name('Camera far').onChange(v => {this.camera.far = v; this.camera.updateProjectionMatrix(); });
+      this.gui.add(this.params, 'renderMode', ['color', 'normal', 'depth']).name('Render mode').onChange(v => this.rootObject.traverse(function (child) { if (child instanceof THREE.Mesh) { 
+        if (v === 'color') {
+          child.material = child.color_material;
+        } else if (v === 'normal') {
+          child.material = child.normal_material;
+        } else if (v === 'depth') {
+          child.material = child.depth_material;
+        }
+      }}));
       if (this.mixer) {
-        this.gui.add(this.params, 'play_animation').name('Play animation').onChange(v => {v ? this.clock.start() : this.clock.stop();});
+        this.gui.add(this.params, 'playAnimation').name('Play animation').onChange(v => {v ? this.clock.start() : this.clock.stop();});
       }
       this.gui.add(this.params, 'showMesh').name('showMesh').onChange(v => this.rootObject.visible = v);
       this.gui.add(this.params, 'showWireframe').name('showWireframe').onChange(v => this.wireObject.visible = v);
@@ -167,7 +191,7 @@ class Viewer {
   animate() {
     requestAnimationFrame(this.animate.bind(this));
     this.controls.update();
-    if (this.mixer && this.params.play_animation) {
+    if (this.mixer && this.params.playAnimation) {
       this.mixer.update(this.clock.getDelta());
     }
     this.renderer.setRenderTarget(null);

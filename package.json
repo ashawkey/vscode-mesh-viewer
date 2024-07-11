@@ -3,7 +3,7 @@
   "publisher": "kiui",
   "displayName": "mesh-viewer",
   "description": "VS Code 3D Mesh Viewer",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "icon": "logo.webp",
   "homepage": "https://github.com/ashawkey/vscode-mesh-viewer",
   "repository": {
@@ -65,7 +65,7 @@
           "default": false,
           "description": "Fold the control panel if true is specified."
         },
-        "meshviewer.FovY": {
+        "meshviewer.cameraFovy": {
           "type": "number",
           "default": 45,
           "description": "Field of view in degrees."
@@ -119,6 +119,26 @@
           "type": "boolean",
           "default": true,
           "description": "Double side material."
+        },
+        "meshviewer.playAnimation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Play animation."
+        },
+        "meshviewer.renderMode": {
+          "type": "string",
+          "default": "color",
+          "description": "Render mode."
+        },
+        "meshviewer.cameraNear": {
+          "type": "number",
+          "default": -1,
+          "description": "Camera near. -1 means auto calculate for suitable depth range."
+        },
+        "meshviewer.cameraFar": {
+          "type": "number",
+          "default": 1000,
+          "description": "Camera far."
         }
       }
     }
