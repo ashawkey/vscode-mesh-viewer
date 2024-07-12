@@ -22,7 +22,7 @@ This extension is modified from [vscode-3d-preview](https://github.com/tatsy/vsc
 
 Search in Marketplace: [mesh-viewer](https://marketplace.visualstudio.com/items?itemName=kiui.mesh-viewer).
 
-<img src="assets/install.jpg" alt="install" width="400"/>
+<img src="assets/install.jpg" alt="install" width="300"/>
 
 ### Mesh preview
 
@@ -36,7 +36,13 @@ Credits to ["Kgirls01" (https://skfb.ly/6CIGK) by nuulbee is licensed under CC A
 
 ![mesh](assets/demo.png)
 
-## Development
+### Configuration
+The default value of GUI settings can be edited in vscode extension settings (@ext:kiui.mesh-viewer).
+
+For example:
+* `CameraNear`: the default value of -1 means we will auto-calculate a suitable value for better depth visualization, but it may lead to problems when zooming in.
+
+### Development
 Install `Node.js` and `npm` first, then clone this repo and:
 
 ```bash
