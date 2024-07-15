@@ -15,13 +15,18 @@ class Viewer {
     }); // antialias can be disabled to improve performance
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.autoClear = false;
 
     this.scene = new THREE.Scene();
     this.clock = new THREE.Clock();
+    this.helper_clock = new THREE.Clock();
     this.mixer = null;
     this.rootObject = null;
     this.wireObject = null;
     this.scene.background = new THREE.Color(this.params.backgroundColor);
+    this.num_meshes = 0;
+    this.num_vertices = 0;
+    this.num_faces = 0;
 
     // light
     this.light = new THREE.HemisphereLight(0xcccccc, 0x333333, this.params.lightIntensity);
@@ -82,6 +87,14 @@ class Viewer {
           child.depth_material = new THREE.MeshDepthMaterial({
             side: this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
           });
+          // update stats
+          this.num_meshes++;
+          this.num_vertices += child.geometry.attributes.position.count;
+          if (child.geometry.index) {
+            this.num_faces += child.geometry.index.count / 3;
+          } else {
+            this.num_faces += child.geometry.attributes.position.count / 3;
+          }
         }
       }.bind(this));
 
@@ -143,6 +156,32 @@ class Viewer {
       this.gridHelper.name = 'gridHelper';
       this.scene.add(this.gridHelper);
 
+      // view helper
+      this.viewHelper = new THREE.ViewHelper(this.camera, this.renderer.domElement);
+      this.viewHelper.controls = this.controls;
+      this.viewHelper.controls.center = this.controls.target;
+      
+      this.div_viewhelper = document.createElement('div');
+      this.div_viewhelper.id = 'viewHelper';
+      this.div_viewhelper.style.position = 'absolute';
+      this.div_viewhelper.style.bottom = '0';
+      this.div_viewhelper.style.right = '0';
+      this.div_viewhelper.style.height = '128px';
+      this.div_viewhelper.style.width = '128px';
+      document.body.appendChild(this.div_viewhelper);
+      this.div_viewhelper.addEventListener('pointerup', event => this.viewHelper.handleClick(event));
+
+      // mesh stats
+      this.div_stats = document.createElement('div');
+      this.div_stats.id = 'stats';
+      this.div_stats.style.position = 'absolute';
+      this.div_stats.style.bottom = '0';
+      this.div_stats.style.left = '0';
+      this.div_stats.style.color = 'black';
+      this.div_stats.style.margin = '10px';
+      this.div_stats.textContent = `Meshes: ${this.num_meshes}, Vertices: ${this.num_vertices}, Faces: ${this.num_faces}`;
+      document.body.appendChild(this.div_stats);
+
       // init GUI
       this.stats = new Stats();
       this.stats.showPanel(0);
@@ -166,23 +205,23 @@ class Viewer {
       if (this.mixer) {
         this.gui.add(this.params, 'playAnimation').name('Play animation').onChange(v => {v ? this.clock.start() : this.clock.stop();});
       }
-      this.gui.add(this.params, 'showMesh').name('showMesh').onChange(v => this.rootObject.visible = v);
-      this.gui.add(this.params, 'showWireframe').name('showWireframe').onChange(v => this.wireObject.visible = v);
+      this.gui.add(this.params, 'showMesh').name('Show Mesh').onChange(v => this.rootObject.visible = v);
+      this.gui.add(this.params, 'showWireframe').name('Show Wireframe').onChange(v => this.wireObject.visible = v);
       this.gui.addColor(this.params, 'wireframeColor').name('Wireframe color').onChange(v => this.wireObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.color = new THREE.Color(v); }}));
-      this.gui.add(this.params, 'showAxis').name('showAxis').onChange(v => this.axisHelper.visible = v);
-      this.gui.add(this.params, 'showGrid').name('showGrid').onChange(v => this.gridHelper.visible = v);
+      this.gui.add(this.params, 'showAxis').name('Show Axis').onChange(v => this.axisHelper.visible = v);
+      this.gui.add(this.params, 'showGrid').name('Show Grid').onChange(v => this.gridHelper.visible = v);
 
       if (this.params.hideControlsOnStart) {
         this.gui.close();
       }
 
-      // start animation
-      this.animate();
-
       // bind to DOM
       document.body.appendChild(this.renderer.domElement);
       document.body.appendChild(this.stats.domElement);
       window.addEventListener('resize', this.onWindowResize.bind(this), false);
+
+      // start animation
+      this.animate();
 
     }.bind(this));
     
@@ -194,8 +233,12 @@ class Viewer {
     if (this.mixer && this.params.playAnimation) {
       this.mixer.update(this.clock.getDelta());
     }
-    this.renderer.setRenderTarget(null);
+    if (this.viewHelper.animating) { 
+      this.viewHelper.update(this.helper_clock.getDelta()); 
+    }
+    this.renderer.clear();
     this.renderer.render(this.scene, this.camera);
+    this.viewHelper.render(this.renderer);
     this.stats.update();
   }
 

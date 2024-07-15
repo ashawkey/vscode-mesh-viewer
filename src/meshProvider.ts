@@ -124,6 +124,7 @@ export class MeshViewProvider implements vscode.CustomReadonlyEditorProvider<Mes
       this.getMediaWebviewUri(webview, 'three/loaders/GLTFLoader.js'),
       this.getMediaWebviewUri(webview, 'three/loaders/FBXLoader.js'),
       this.getMediaWebviewUri(webview, 'three/fflate.min.js'),
+      this.getMediaWebviewUri(webview, 'three/ViewHelper.js'),
       this.getMediaWebviewUri(webview, 'viewer.js'),
     ];
     return scripts.map(source => `<script nonce="${nonce}" src="${source}"></script>`).join('\n');
@@ -154,7 +155,7 @@ export class MeshViewProvider implements vscode.CustomReadonlyEditorProvider<Mes
         <link href="${styleUri}" rel="stylesheet" />
         ${this.getSettings(fileToLoad)}
 
-        <title>3D Mesh Viewer Light</title>
+        <title>3D Mesh Viewer</title>
       </head>
       <body>
         ${this.getScripts(webview, nonce)}

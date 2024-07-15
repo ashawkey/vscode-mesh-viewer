@@ -132,7 +132,7 @@
         },
         "meshviewer.cameraNear": {
           "type": "number",
-          "default": -1,
+          "default": 0.01,
           "description": "Camera near. -1 means auto calculate for suitable depth range."
         },
         "meshviewer.cameraFar": {
