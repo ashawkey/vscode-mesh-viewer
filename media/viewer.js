@@ -21,8 +21,10 @@ class Viewer {
     this.clock = new THREE.Clock();
     this.helper_clock = new THREE.Clock();
     this.mixer = null;
-    this.rootObject = null;
+    this.group = null;
+    this.meshObject = new THREE.Group();
     this.wireObject = null;
+    this.pointObject = new THREE.Group();
     this.scene.background = new THREE.Color(this.params.backgroundColor);
     this.num_meshes = 0;
     this.num_vertices = 0;
@@ -48,19 +50,19 @@ class Viewer {
     loader.load(this.params.fileToLoad, function (object) {
 
       if (fileExt === 'glb' || fileExt === 'gltf') {        
-        this.rootObject = object.scene;
+        this.group = object.scene; // Group
         if (object.animations.length > 0) {
-          this.mixer = new THREE.AnimationMixer(this.rootObject);
+          this.mixer = new THREE.AnimationMixer(this.group);
           this.mixer.clipAction(object.animations[0]).play();
         }
       } else if (fileExt === 'fbx') {
-        this.rootObject = object;
+        this.group = object; // Group
         if (object.animations.length > 0) {
-          this.mixer = new THREE.AnimationMixer(this.rootObject);
+          this.mixer = new THREE.AnimationMixer(this.group);
           this.mixer.clipAction(object.animations[0]).play();
         }
       } else if (fileExt === 'obj') {
-        this.rootObject = object;
+        this.group = object; // Group
       } else if (fileExt === 'ply') {
         object.computeVertexNormals();
         var material = new THREE.MeshStandardMaterial({
@@ -69,13 +71,11 @@ class Viewer {
           flatShading: true,
           side: this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
         });
-        this.rootObject = new THREE.Mesh(object, material);
+        this.group = new THREE.Mesh(object, material);
       }
-      this.rootObject.visible = this.params.showMesh;
-      this.scene.add(this.rootObject);
 
-      // traverse and update material
-      this.rootObject.traverse(function (child) {
+      // traverse and update mesh and points
+      this.group.traverse(function (child) {
         if (child instanceof THREE.Mesh) {
           child.material.side = this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide;
           child.material.color = new THREE.Color(this.params.meshColor);
@@ -89,17 +89,34 @@ class Viewer {
           });
           // update stats
           this.num_meshes++;
-          this.num_vertices += child.geometry.attributes.position.count;
+          this.num_vertices += child.geometry.attributes.position.count; // this is always num_faces * 3...
           if (child.geometry.index) {
             this.num_faces += child.geometry.index.count / 3;
           } else {
             this.num_faces += child.geometry.attributes.position.count / 3;
           }
+          this.meshObject.add(child);
+          // also copy mesh as points
+          var points = new THREE.Points(child.geometry, new THREE.PointsMaterial({
+            color: new THREE.Color(this.params.pointColor),
+            size: this.params.pointSize,
+          }));
+          this.pointObject.add(points);
+        } else if (child instanceof THREE.Points) {
+          child.material.color = new THREE.Color(this.params.pointColor);
+          child.material.size = this.params.pointSize;
+          this.pointObject.add(child);
         }
       }.bind(this));
 
-      // copy rootObject as wireframes
-      this.wireObject = this.rootObject.clone();
+      this.meshObject.visible = this.params.showMesh;
+      this.scene.add(this.meshObject);
+
+      this.pointObject.visible = this.params.showPoints;
+      this.scene.add(this.pointObject);
+
+      // copy meshObject as wireframes
+      this.wireObject = this.meshObject.clone();
       this.wireObject.traverse(function (child) {
         if (child instanceof THREE.Mesh) {
           child.material = new THREE.MeshStandardMaterial({
@@ -187,13 +204,12 @@ class Viewer {
       this.stats.showPanel(0);
       this.gui = new dat.GUI();
       this.gui.addColor(this.params, 'backgroundColor').name('Background color').onChange(v => this.scene.background = new THREE.Color(v));
-      this.gui.addColor(this.params, 'meshColor').name('Mesh color').onChange(v => this.rootObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.color = new THREE.Color(v); }}));
       this.gui.add(this.params, 'lightIntensity', 0, 3).name('Light intensity').onChange(v => this.light.intensity = v);
       this.gui.add(this.params, 'cameraFovy', 0.001, 180).onChange(v => {this.camera.fov = v; this.camera.updateProjectionMatrix(); });
-      this.gui.add(this.params, 'doubleSide').name('Double side').onChange(v => this.rootObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.side = v ? THREE.DoubleSide : THREE.FrontSide; }}));
+      this.gui.add(this.params, 'doubleSide').name('Double side').onChange(v => this.meshObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.side = v ? THREE.DoubleSide : THREE.FrontSide; }}));
       this.gui.add(this.params, 'cameraNear', 0.001, 10).name('Camera near').onChange(v => {this.camera.near = v; this.camera.updateProjectionMatrix(); });
       this.gui.add(this.params, 'cameraFar', 0.1, 1000).name('Camera far').onChange(v => {this.camera.far = v; this.camera.updateProjectionMatrix(); });
-      this.gui.add(this.params, 'renderMode', ['color', 'normal', 'depth']).name('Render mode').onChange(v => this.rootObject.traverse(function (child) { if (child instanceof THREE.Mesh) { 
+      this.gui.add(this.params, 'renderMode', ['color', 'normal', 'depth']).name('Render mode').onChange(v => this.meshObject.traverse(function (child) { if (child instanceof THREE.Mesh) { 
         if (v === 'color') {
           child.material = child.color_material;
         } else if (v === 'normal') {
@@ -205,9 +221,13 @@ class Viewer {
       if (this.mixer) {
         this.gui.add(this.params, 'playAnimation').name('Play animation').onChange(v => {v ? this.clock.start() : this.clock.stop();});
       }
-      this.gui.add(this.params, 'showMesh').name('Show Mesh').onChange(v => this.rootObject.visible = v);
+      this.gui.add(this.params, 'showMesh').name('Show Mesh').onChange(v => this.meshObject.visible = v);
+      this.gui.addColor(this.params, 'meshColor').name('Mesh color').onChange(v => this.meshObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.color = new THREE.Color(v); }}));
       this.gui.add(this.params, 'showWireframe').name('Show Wireframe').onChange(v => this.wireObject.visible = v);
       this.gui.addColor(this.params, 'wireframeColor').name('Wireframe color').onChange(v => this.wireObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.color = new THREE.Color(v); }}));
+      this.gui.add(this.params, 'showPoints').name('Show Points').onChange(v => this.pointObject.visible = v);
+      this.gui.addColor(this.params, 'pointColor').name('Point color').onChange(v => this.pointObject.traverse(function (child) { if (child instanceof THREE.Points) { child.material.color = new THREE.Color(v); }}));
+      this.gui.add(this.params, 'pointSize', 0.01, 10).name('Point size').onChange(v => this.pointObject.traverse(function (child) { if (child instanceof THREE.Points) { child.material.size = v; }}));
       this.gui.add(this.params, 'showAxis').name('Show Axis').onChange(v => this.axisHelper.visible = v);
       this.gui.add(this.params, 'showGrid').name('Show Grid').onChange(v => this.gridHelper.visible = v);
 

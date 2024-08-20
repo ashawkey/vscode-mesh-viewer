@@ -3,7 +3,7 @@
   "publisher": "kiui",
   "displayName": "mesh-viewer",
   "description": "VS Code 3D Mesh Viewer",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "icon": "logo.webp",
   "homepage": "https://github.com/ashawkey/vscode-mesh-viewer",
   "repository": {
@@ -80,6 +80,11 @@
           "default": false,
           "description": "Show wireframe."
         },
+        "meshviewer.showPoints": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show points."
+        },
         "meshviewer.showGrid": {
           "type": "boolean",
           "default": false,
@@ -109,6 +114,16 @@
           "type": "number",
           "default": 2,
           "description": "Wireframe width."
+        },
+        "meshviewer.pointColor": {
+          "type": "string",
+          "default": "#ff0000",
+          "description": "Point color."
+        },
+        "meshviewer.pointSize": {
+          "type": "number",
+          "default": 0.1,
+          "description": "Point size."
         },
         "meshviewer.lightIntensity": {
           "type": "number",
