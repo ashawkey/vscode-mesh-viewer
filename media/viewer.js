@@ -227,7 +227,7 @@ class Viewer {
       this.gui.addColor(this.params, 'wireframeColor').name('Wireframe color').onChange(v => this.wireObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.color = new THREE.Color(v); }}));
       this.gui.add(this.params, 'showPoints').name('Show Points').onChange(v => this.pointObject.visible = v);
       this.gui.addColor(this.params, 'pointColor').name('Point color').onChange(v => this.pointObject.traverse(function (child) { if (child instanceof THREE.Points) { child.material.color = new THREE.Color(v); }}));
-      this.gui.add(this.params, 'pointSize', 0.01, 10).name('Point size').onChange(v => this.pointObject.traverse(function (child) { if (child instanceof THREE.Points) { child.material.size = v; }}));
+      this.gui.add(this.params, 'pointSize', 0.01, 1).name('Point size').onChange(v => this.pointObject.traverse(function (child) { if (child instanceof THREE.Points) { child.material.size = v; }}));
       this.gui.add(this.params, 'showAxis').name('Show Axis').onChange(v => this.axisHelper.visible = v);
       this.gui.add(this.params, 'showGrid').name('Show Grid').onChange(v => this.gridHelper.visible = v);
 
