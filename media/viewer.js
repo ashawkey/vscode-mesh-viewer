@@ -34,6 +34,9 @@ class Viewer {
     this.light = new THREE.HemisphereLight(0xcccccc, 0x333333, this.params.lightIntensity);
     this.scene.add(this.light);
 
+    // point sprite
+    this.sprite = new THREE.TextureLoader().load('three/textures/sprites/disc.png' );
+
     // load mesh and all other stuff after loading
     const fileExt = this.params.fileToLoad.split('.').pop().toLowerCase();
     let loader;
@@ -42,7 +45,7 @@ class Viewer {
     } else if (fileExt === 'fbx') {
       loader = new THREE.FBXLoader();
     } else if (fileExt === 'obj') {
-      loader = new THREE.OBJLoader();
+      loader = new THREE.NGonOBJLoader();
     } else if (fileExt === 'ply') {
       loader = new THREE.PLYLoader();
     }
@@ -62,10 +65,31 @@ class Viewer {
           this.mixer.clipAction(object.animations[0]).play();
         }
       } else if (fileExt === 'obj') {
-        this.group = object; // Group
+        // object is an NGon
+        const geometry = object.makeGeometry();
+        const material = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(this.params.meshColor), // default grey
+          roughness: 0.1,
+          flatShading: true,
+          side: this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
+        });
+        this.group = new THREE.Mesh(geometry, material);
+        
+        // specially handle ngon wireframe
+        const wireGeometry = object.makeWireGeometry();
+        const wireMaterial = new THREE.LineBasicMaterial({ 
+            color: this.params.wireframeColor, 
+            linewidth: this.params.wireframeWidth,
+            transparent: true,
+            // opacity: 0.8,
+        });
+        this.wireObject = new THREE.LineSegments(wireGeometry, wireMaterial);
+        this.wireObject.position.copy(this.group.position);
+        
+
       } else if (fileExt === 'ply') {
         object.computeVertexNormals();
-        var material = new THREE.MeshStandardMaterial({
+        const material = new THREE.MeshStandardMaterial({
           color: new THREE.Color(this.params.meshColor), // default grey
           roughness: 0.1,
           flatShading: true,
@@ -97,10 +121,16 @@ class Viewer {
           }
           this.meshObject.add(child);
           // also copy mesh as points
-          var points = new THREE.Points(child.geometry, new THREE.PointsMaterial({
+          var point_material = new THREE.PointsMaterial({
             color: new THREE.Color(this.params.pointColor),
             size: this.params.pointSize,
-          }));
+            sizeAttenuation: true, 
+            map: this.sprite, 
+            alphaTest: 0.5, 
+            transparent: true,
+          })
+          // point_material.color.setHSL( 1.0, 0.3, 0.7, THREE.SRGBColorSpace );
+          var points = new THREE.Points(child.geometry, point_material);
           this.pointObject.add(points);
         } else if (child instanceof THREE.Points) {
           child.material.color = new THREE.Color(this.params.pointColor);
@@ -115,20 +145,22 @@ class Viewer {
       this.pointObject.visible = this.params.showPoints;
       this.scene.add(this.pointObject);
 
-      // copy meshObject as wireframes
-      this.wireObject = this.meshObject.clone();
-      this.wireObject.traverse(function (child) {
-        if (child instanceof THREE.Mesh) {
-          child.material = new THREE.MeshStandardMaterial({
-            color: this.params.wireframeColor,
-            roughness: 0.1,
-            flatShading: true,
-            side: THREE.DoubleSide, // wireframe is always double sided
-            wireframe: true,
-            wireframeLinewidth: this.params.wireframeWidth,
-          });
-        }
-      }.bind(this));
+      // copy meshObject as wireframes (except obj which we specially processed earlier)
+      if (fileExt !== 'obj') {
+          this.wireObject = this.meshObject.clone();
+          this.wireObject.traverse(function (child) {
+            if (child instanceof THREE.Mesh) {
+              child.material = new THREE.MeshStandardMaterial({
+                color: this.params.wireframeColor,
+                roughness: 0.1,
+                flatShading: true,
+                side: THREE.DoubleSide, // wireframe is always double sided
+                wireframe: true,
+                wireframeLinewidth: this.params.wireframeWidth,
+              });
+            }
+          }.bind(this));
+      }
       this.wireObject.visible = this.params.showWireframe;
       this.scene.add(this.wireObject);
 
@@ -227,7 +259,7 @@ class Viewer {
       this.gui.addColor(this.params, 'wireframeColor').name('Wireframe color').onChange(v => this.wireObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.color = new THREE.Color(v); }}));
       this.gui.add(this.params, 'showPoints').name('Show Points').onChange(v => this.pointObject.visible = v);
       this.gui.addColor(this.params, 'pointColor').name('Point color').onChange(v => this.pointObject.traverse(function (child) { if (child instanceof THREE.Points) { child.material.color = new THREE.Color(v); }}));
-      this.gui.add(this.params, 'pointSize', 0.01, 1).name('Point size').onChange(v => this.pointObject.traverse(function (child) { if (child instanceof THREE.Points) { child.material.size = v; }}));
+      this.gui.add(this.params, 'pointSize', 0.001, 1).name('Point size').onChange(v => this.pointObject.traverse(function (child) { if (child instanceof THREE.Points) { child.material.size = v; }}));
       this.gui.add(this.params, 'showAxis').name('Show Axis').onChange(v => this.axisHelper.visible = v);
       this.gui.add(this.params, 'showGrid').name('Show Grid').onChange(v => this.gridHelper.visible = v);
 

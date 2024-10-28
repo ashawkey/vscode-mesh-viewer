@@ -27,6 +27,10 @@ Search in Marketplace: [mesh-viewer](https://marketplace.visualstudio.com/items?
 
 ### Mesh preview
 
+<img src="assets/quad_point.jpg" alt="quad_point" width="300"/>
+
+Rendering quad or polygon faces (only for `obj` format).
+
 <video controls>
   <source src="assets/demo.mp4" type="video/mp4">
 </video>
@@ -38,9 +42,11 @@ Credits to ["Kgirls01" (https://skfb.ly/6CIGK) by nuulbee is licensed under CC A
 ![mesh](assets/demo.png)
 
 ### Configuration
-The default value of GUI settings can be edited in vscode extension settings (@ext:kiui.mesh-viewer).
+The default value of GUI settings can be edited in vscode extension settings (`@ext:kiui.mesh-viewer` or just search `meshviewer`).
 
-For example:
+![settings](assets/setting.jpg)
+
+Notes:
 * `CameraNear`: -1 means we will auto-calculate a suitable value for better depth visualization, but it may lead to problems when zooming in.
 
 ### Development
