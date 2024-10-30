@@ -115,7 +115,7 @@ class NGon {
     }
 
     geometry.setIndex(indices);
-
+  
     return geometry;
   }
 

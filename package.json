@@ -3,7 +3,7 @@
   "publisher": "kiui",
   "displayName": "mesh-viewer",
   "description": "VS Code 3D Mesh Viewer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "icon": "logo.webp",
   "homepage": "https://github.com/ashawkey/vscode-mesh-viewer",
   "repository": {

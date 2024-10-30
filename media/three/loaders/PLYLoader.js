@@ -303,11 +303,10 @@
 
 				let geometry = new THREE.BufferGeometry(); // mandatory buffer data
 
-				if ( buffer.indices.length > 0 ) {
-
-					geometry.setIndex( buffer.indices );
-
-				}
+				// if ( buffer.indices.length > 0 ) {
+				// 	geometry.setIndex( buffer.indices );
+				// }
+				geometry.setIndex( buffer.indices ); // set index even if empty to make sure pure point cloud displays correctly
 
 				geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( buffer.vertices, 3 ) ); // optional buffer data
 

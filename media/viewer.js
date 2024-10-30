@@ -73,7 +73,8 @@ class Viewer {
           flatShading: true,
           side: this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
         });
-        this.group = new THREE.Mesh(geometry, material);
+        this.group = new THREE.Group();
+        this.group.add(new THREE.Mesh(geometry, material));
         
         // specially handle ngon wireframe
         const wireGeometry = object.makeWireGeometry();
@@ -95,10 +96,11 @@ class Viewer {
           flatShading: true,
           side: this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
         });
-        this.group = new THREE.Mesh(object, material);
+        this.group = new THREE.Group();
+        this.group.add(new THREE.Mesh(object, material));
       }
 
-      // traverse and update mesh and points
+      // traverse and update mesh
       this.group.traverse(function (child) {
         if (child instanceof THREE.Mesh) {
           child.material.side = this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide;
@@ -120,8 +122,18 @@ class Viewer {
             this.num_faces += child.geometry.attributes.position.count / 3;
           }
           this.meshObject.add(child);
-          // also copy mesh as points
-          var point_material = new THREE.PointsMaterial({
+        }
+      }.bind(this));
+
+      this.meshObject.visible = this.params.showMesh;
+      this.scene.add(this.meshObject);
+
+      // traverse and update points
+      this.meshObject.traverse(function (child) {
+        if (child instanceof THREE.Mesh) {
+          const point_geometry = new THREE.BufferGeometry();
+          point_geometry.setAttribute('position', child.geometry.attributes.position);
+          const point_material = new THREE.PointsMaterial({
             color: new THREE.Color(this.params.pointColor),
             size: this.params.pointSize,
             sizeAttenuation: true, 
@@ -129,18 +141,10 @@ class Viewer {
             alphaTest: 0.5, 
             transparent: true,
           })
-          // point_material.color.setHSL( 1.0, 0.3, 0.7, THREE.SRGBColorSpace );
-          var points = new THREE.Points(child.geometry, point_material);
+          const points = new THREE.Points(point_geometry, point_material);
           this.pointObject.add(points);
-        } else if (child instanceof THREE.Points) {
-          child.material.color = new THREE.Color(this.params.pointColor);
-          child.material.size = this.params.pointSize;
-          this.pointObject.add(child);
         }
       }.bind(this));
-
-      this.meshObject.visible = this.params.showMesh;
-      this.scene.add(this.meshObject);
 
       this.pointObject.visible = this.params.showPoints;
       this.scene.add(this.pointObject);
