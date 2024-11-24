@@ -142,6 +142,7 @@
         },
         "meshviewer.renderMode": {
           "type": "string",
+          "enum": ["color", "normal", "depth"],
           "default": "color",
           "description": "Render mode."
         },
