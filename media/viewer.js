@@ -113,6 +113,14 @@ class Viewer {
           child.depth_material = new THREE.MeshDepthMaterial({
             side: this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
           });
+          // render mode initialization
+          if (this.params.renderMode === 'normal') {
+            child.material = child.normal_material;
+          } else if (this.params.renderMode === 'depth') {
+            child.material = child.depth_material;
+          } else {
+            child.material = child.color_material;
+          }
           // update stats
           this.num_meshes++;
           this.num_vertices += child.geometry.attributes.position.count; // this is always num_faces * 3...
