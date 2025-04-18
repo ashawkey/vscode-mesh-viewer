@@ -3,7 +3,7 @@
   "publisher": "kiui",
   "displayName": "mesh-viewer",
   "description": "VS Code 3D Mesh Viewer",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "icon": "logo.webp",
   "homepage": "https://github.com/ashawkey/vscode-mesh-viewer",
   "repository": {
@@ -142,7 +142,7 @@
         },
         "meshviewer.renderMode": {
           "type": "string",
-          "enum": ["color", "normal", "depth"],
+          "enum": ["color", "normal", "depth", "default"],
           "default": "color",
           "description": "Render mode."
         },

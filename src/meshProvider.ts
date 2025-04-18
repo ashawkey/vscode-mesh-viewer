@@ -103,7 +103,7 @@ export class MeshViewProvider implements vscode.CustomReadonlyEditorProvider<Mes
       lightIntensity: config.get('lightIntensity', 1),
       doubleSide: config.get('doubleSide', true),
       playAnimation: config.get('playAnimation', true),
-      renderMode: config.get('renderMode', 'color'),
+      renderMode: config.get('renderMode', 'default'),
       cameraNear: config.get('cameraNear', -1),
       cameraFar: config.get('cameraFar', 1000),
     };

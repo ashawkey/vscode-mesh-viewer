@@ -21,8 +21,8 @@ class Viewer {
     this.clock = new THREE.Clock();
     this.helper_clock = new THREE.Clock();
     this.mixer = null;
-    this.group = null;
-    this.meshObject = new THREE.Group();
+    this.meshObject = null;
+    // this.meshObject = new THREE.Group();
     this.wireObject = null;
     this.pointObject = new THREE.Group();
     this.scene.background = new THREE.Color(this.params.backgroundColor);
@@ -53,28 +53,32 @@ class Viewer {
     loader.load(this.params.fileToLoad, function (object) {
 
       if (fileExt === 'glb' || fileExt === 'gltf') {        
-        this.group = object.scene; // Group
+        this.meshObject = object.scene; // Group
         if (object.animations.length > 0) {
-          this.mixer = new THREE.AnimationMixer(this.group);
+          this.mixer = new THREE.AnimationMixer(this.meshObject);
           this.mixer.clipAction(object.animations[0]).play();
         }
       } else if (fileExt === 'fbx') {
-        this.group = object; // Group
+        this.meshObject = object; // Group
         if (object.animations.length > 0) {
-          this.mixer = new THREE.AnimationMixer(this.group);
+          this.mixer = new THREE.AnimationMixer(this.meshObject);
           this.mixer.clipAction(object.animations[0]).play();
         }
       } else if (fileExt === 'obj') {
         // object is an NGon
         const geometry = object.makeGeometry();
+
+        // support vertex colors
         const material = new THREE.MeshStandardMaterial({
+          vertexColors: geometry.attributes.color !== undefined,
           color: new THREE.Color(this.params.meshColor), // default grey
           roughness: 0.1,
           flatShading: true,
           side: this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
         });
-        this.group = new THREE.Group();
-        this.group.add(new THREE.Mesh(geometry, material));
+
+        this.meshObject = new THREE.Group();
+        this.meshObject.add(new THREE.Mesh(geometry, material));
         
         // specially handle ngon wireframe
         const wireGeometry = object.makeWireGeometry();
@@ -85,7 +89,7 @@ class Viewer {
             // opacity: 0.8,
         });
         this.wireObject = new THREE.LineSegments(wireGeometry, wireMaterial);
-        this.wireObject.position.copy(this.group.position);
+        this.wireObject.position.copy(this.meshObject.position);
         
 
       } else if (fileExt === 'ply') {
@@ -96,18 +100,27 @@ class Viewer {
           flatShading: true,
           side: this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
         });
-        this.group = new THREE.Group();
-        this.group.add(new THREE.Mesh(object, material));
+        this.meshObject = new THREE.Group();
+        this.meshObject.add(new THREE.Mesh(object, material));
       }
 
       // traverse and update mesh
-      this.group.traverse(function (child) {
+      // console.log(this.meshObject);
+      this.meshObject.traverse(function (child) {
         if (child instanceof THREE.Mesh) {
-          child.material.side = this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide;
-          child.material.color = new THREE.Color(this.params.meshColor);
           // support multiple materials to switch
-          child.color_material = child.material;
+          child.default_material = child.material.clone();
+          child.default_material.side = this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide;
+          // sometimes the default material just break and become black, so we need to create a new one
+          child.color_material = new THREE.MeshStandardMaterial({
+            color: new THREE.Color(this.params.meshColor), // default grey
+            roughness: 0.1,
+            flatShading: true,
+            side: this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
+          });
           child.normal_material = new THREE.MeshNormalMaterial({
+            flatShading: true, // this is important for accurate normal map
+            normalMapType: THREE.ObjectSpaceNormalMap,
             side: this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
           });
           child.depth_material = new THREE.MeshDepthMaterial({
@@ -118,8 +131,10 @@ class Viewer {
             child.material = child.normal_material;
           } else if (this.params.renderMode === 'depth') {
             child.material = child.depth_material;
-          } else {
+          } else if (this.params.renderMode === 'color') {
             child.material = child.color_material;
+          } else {
+            child.material = child.default_material;
           }
           // update stats
           this.num_meshes++;
@@ -129,7 +144,6 @@ class Viewer {
           } else {
             this.num_faces += child.geometry.attributes.position.count / 3;
           }
-          this.meshObject.add(child);
         }
       }.bind(this));
 
@@ -253,13 +267,15 @@ class Viewer {
       this.gui.add(this.params, 'doubleSide').name('Double side').onChange(v => this.meshObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.side = v ? THREE.DoubleSide : THREE.FrontSide; }}));
       this.gui.add(this.params, 'cameraNear', 0.001, 10).name('Camera near').onChange(v => {this.camera.near = v; this.camera.updateProjectionMatrix(); });
       this.gui.add(this.params, 'cameraFar', 0.1, 1000).name('Camera far').onChange(v => {this.camera.far = v; this.camera.updateProjectionMatrix(); });
-      this.gui.add(this.params, 'renderMode', ['color', 'normal', 'depth']).name('Render mode').onChange(v => this.meshObject.traverse(function (child) { if (child instanceof THREE.Mesh) { 
+      this.gui.add(this.params, 'renderMode', ['default', 'color', 'normal', 'depth']).name('Render mode').onChange(v => this.meshObject.traverse(function (child) { if (child instanceof THREE.Mesh) { 
         if (v === 'color') {
           child.material = child.color_material;
         } else if (v === 'normal') {
           child.material = child.normal_material;
         } else if (v === 'depth') {
           child.material = child.depth_material;
+        } else if (v === 'default') {
+          child.material = child.default_material;
         }
       }}));
       if (this.mixer) {
