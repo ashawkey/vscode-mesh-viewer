@@ -3,7 +3,7 @@
   "publisher": "kiui",
   "displayName": "mesh-viewer",
   "description": "VS Code 3D Mesh Viewer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "icon": "logo.webp",
   "homepage": "https://github.com/ashawkey/vscode-mesh-viewer",
   "repository": {
@@ -134,6 +134,11 @@
           "type": "boolean",
           "default": true,
           "description": "Double side material."
+        },
+        "meshviewer.flatShading": {
+          "type": "boolean",
+          "default": false,
+          "description": "Flat shading."
         },
         "meshviewer.playAnimation": {
           "type": "boolean",
