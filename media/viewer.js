@@ -121,6 +121,8 @@ class Viewer {
       // console.log(this.meshObject);
       this.meshObject.traverse(function (child) {
         if (child instanceof THREE.Mesh) {
+          // make sure normal is good
+          child.geometry.computeVertexNormals();
           // support multiple materials to switch
           child.default_material = child.material.clone();
           child.default_material.side = this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide;
