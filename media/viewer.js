@@ -126,6 +126,9 @@ class Viewer {
           // support multiple materials to switch
           child.default_material = child.material.clone();
           child.default_material.side = this.params.doubleSide ? THREE.DoubleSide : THREE.FrontSide;
+          child.default_material.metalness = this.params.metalness;
+          child.default_material.roughness = this.params.roughness;
+          child.default_material.flatShading = this.params.flatShading;
           // sometimes the default material just break and become black, so we need to create a new one
           child.color_material = new THREE.MeshStandardMaterial({
             color: new THREE.Color(this.params.meshColor), // default grey
@@ -279,8 +282,8 @@ class Viewer {
       this.gui.addColor(this.params, 'backgroundColor').name('Background color').onChange(v => this.scene.background = new THREE.Color(v));
       this.gui.add(this.params, 'lightIntensity', 0, 3).name('Light intensity').onChange(v => this.light.intensity = v);
       this.gui.add(this.params, 'cameraFovy', 0.001, 180).onChange(v => {this.camera.fov = v; this.camera.updateProjectionMatrix(); });
-      this.gui.add(this.params, 'doubleSide').name('Double side').onChange(v => this.meshObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.side = v ? THREE.DoubleSide : THREE.FrontSide; }}));
-      this.gui.add(this.params, 'flatShading').name('Flat shading').onChange(v => this.meshObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.flatShading = v; }}));
+      this.gui.add(this.params, 'doubleSide').name('Double side').onChange(v => this.meshObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.side = v ? THREE.DoubleSide : THREE.FrontSide; child.material.needsUpdate = true; }}));
+      this.gui.add(this.params, 'flatShading').name('Flat shading').onChange(v => this.meshObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.flatShading = v ? true : false; child.material.needsUpdate = true; }}));
       this.gui.add(this.params, 'metalness', 0, 1).name('Metalness').onChange(v => this.meshObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.metalness = v; }}));
       this.gui.add(this.params, 'roughness', 0, 1).name('Roughness').onChange(v => this.meshObject.traverse(function (child) { if (child instanceof THREE.Mesh) { child.material.roughness = v; }}));
       this.gui.add(this.params, 'cameraNear', 0.001, 10).name('Camera near').onChange(v => {this.camera.near = v; this.camera.updateProjectionMatrix(); });
