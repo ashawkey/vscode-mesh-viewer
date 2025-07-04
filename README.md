@@ -59,9 +59,13 @@ npm install
 # use F5 or the dubugger panel to start debugging (will open a new VSCode window with this extension enabled.)
 # Help->Toggle Developer Tools (or Shift-Control-I) to see console output.
 
-# publish (requires vsce, a publisher as defined in package.json, and the personal access token)
-# first change version in package.json
+# publish to official vscode marketplace (requires vsce, a publisher as defined in package.json, and the personal access token)
+# don't forget to update version in package.json
 vsce publish
+
+# publish to open vsx (e.g., to support cursor)
+vsce package # will output a .vsix file
+# then upload the .vsix file to https://open-vsx.org/, you'll need an eclipse account and sign many agreements to do this...
 ```
 
 ## Acknowledgements & Reference
