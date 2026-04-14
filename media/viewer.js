@@ -1,3 +1,226 @@
+class FreeOrbitControls {
+
+  constructor(camera, domElement) {
+    this.camera = camera;
+    this.domElement = domElement;
+    this.enabled = true;
+    this.target = new THREE.Vector3();
+    this.center = this.target;
+
+    this.rotateSpeed = 1.0;
+    this.panSpeed = 1.0;
+    this.zoomSpeed = 1.0;
+    this.minDistance = 1e-6;
+    this.maxDistance = Infinity;
+
+    this._state = 'none';
+    this._last = new THREE.Vector2();
+    this._pointerId = null;
+    this._touches = new Map();
+    this._touchStartDistance = 0;
+    this._touchStartCenter = new THREE.Vector2();
+
+    this._onContextMenu = (e) => e.preventDefault();
+    this._onPointerDown = this._handlePointerDown.bind(this);
+    this._onPointerMove = this._handlePointerMove.bind(this);
+    this._onPointerUp = this._handlePointerUp.bind(this);
+    this._onWheel = this._handleWheel.bind(this);
+
+    this.domElement.style.touchAction = 'none';
+    this.domElement.addEventListener('contextmenu', this._onContextMenu);
+    this.domElement.addEventListener('pointerdown', this._onPointerDown);
+    this.domElement.addEventListener('pointermove', this._onPointerMove);
+    this.domElement.addEventListener('pointerup', this._onPointerUp);
+    this.domElement.addEventListener('pointercancel', this._onPointerUp);
+    this.domElement.addEventListener('wheel', this._onWheel, { passive: false });
+  }
+
+  update() {
+    this.camera.lookAt(this.target);
+    return false;
+  }
+
+  dispose() {
+    this.domElement.removeEventListener('contextmenu', this._onContextMenu);
+    this.domElement.removeEventListener('pointerdown', this._onPointerDown);
+    this.domElement.removeEventListener('pointermove', this._onPointerMove);
+    this.domElement.removeEventListener('pointerup', this._onPointerUp);
+    this.domElement.removeEventListener('pointercancel', this._onPointerUp);
+    this.domElement.removeEventListener('wheel', this._onWheel);
+    this._touches.clear();
+  }
+
+  _handlePointerDown(event) {
+    if (!this.enabled) {
+      return;
+    }
+
+    this.domElement.setPointerCapture(event.pointerId);
+
+    if (event.pointerType === 'touch') {
+      this._touches.set(event.pointerId, new THREE.Vector2(event.clientX, event.clientY));
+      if (this._touches.size === 1) {
+        this._state = 'touch-rotate';
+        this._last.set(event.clientX, event.clientY);
+      } else if (this._touches.size === 2) {
+        const points = [...this._touches.values()];
+        this._touchStartDistance = points[0].distanceTo(points[1]);
+        this._touchStartCenter.set((points[0].x + points[1].x) * 0.5, (points[0].y + points[1].y) * 0.5);
+        this._state = 'touch-dolly-pan';
+      }
+      return;
+    }
+
+    this._pointerId = event.pointerId;
+    this._last.set(event.clientX, event.clientY);
+
+    if (event.button === 0) {
+      this._state = 'rotate';
+    } else if (event.button === 1) {
+      this._state = 'dolly';
+    } else if (event.button === 2) {
+      this._state = 'pan';
+    } else {
+      this._state = 'none';
+    }
+  }
+
+  _handlePointerMove(event) {
+    if (!this.enabled) {
+      return;
+    }
+
+    if (event.pointerType === 'touch') {
+      if (!this._touches.has(event.pointerId)) {
+        return;
+      }
+      this._touches.set(event.pointerId, new THREE.Vector2(event.clientX, event.clientY));
+
+      if (this._touches.size === 1 && this._state === 'touch-rotate') {
+        const p = [...this._touches.values()][0];
+        const dx = p.x - this._last.x;
+        const dy = p.y - this._last.y;
+        this._rotate(dx, dy);
+        this._last.copy(p);
+      } else if (this._touches.size >= 2 && this._state === 'touch-dolly-pan') {
+        const points = [...this._touches.values()];
+        const distance = points[0].distanceTo(points[1]);
+        const center = new THREE.Vector2((points[0].x + points[1].x) * 0.5, (points[0].y + points[1].y) * 0.5);
+
+        if (this._touchStartDistance > 0) {
+          const scale = this._touchStartDistance / distance;
+          this._dollyByScale(scale);
+        }
+
+        const panDx = center.x - this._touchStartCenter.x;
+        const panDy = center.y - this._touchStartCenter.y;
+        this._pan(panDx, panDy);
+
+        this._touchStartDistance = distance;
+        this._touchStartCenter.copy(center);
+      }
+      return;
+    }
+
+    if (event.pointerId !== this._pointerId) {
+      return;
+    }
+
+    const dx = event.clientX - this._last.x;
+    const dy = event.clientY - this._last.y;
+    this._last.set(event.clientX, event.clientY);
+
+    if (this._state === 'rotate') {
+      this._rotate(dx, dy);
+    } else if (this._state === 'pan') {
+      this._pan(dx, dy);
+    } else if (this._state === 'dolly') {
+      this._dollyByScale(Math.pow(0.95, this.zoomSpeed * dy * 0.05));
+    }
+  }
+
+  _handlePointerUp(event) {
+    if (event.pointerType === 'touch') {
+      this._touches.delete(event.pointerId);
+      if (this._touches.size === 0) {
+        this._state = 'none';
+      } else if (this._touches.size === 1) {
+        this._state = 'touch-rotate';
+        this._last.copy([...this._touches.values()][0]);
+      }
+      return;
+    }
+
+    if (event.pointerId === this._pointerId) {
+      this._pointerId = null;
+      this._state = 'none';
+    }
+  }
+
+  _handleWheel(event) {
+    if (!this.enabled) {
+      return;
+    }
+
+    event.preventDefault();
+    const scale = event.deltaY > 0 ? Math.pow(0.95, -this.zoomSpeed * 2.0) : Math.pow(0.95, this.zoomSpeed * 2.0);
+    this._dollyByScale(scale);
+  }
+
+  _rotate(deltaX, deltaY) {
+    const element = this.domElement;
+    const yaw = -2 * Math.PI * (deltaX / element.clientHeight) * this.rotateSpeed;
+    const pitch = -2 * Math.PI * (deltaY / element.clientHeight) * this.rotateSpeed;
+
+    const offset = this.camera.position.clone().sub(this.target);
+    const viewDir = this.target.clone().sub(this.camera.position).normalize();
+
+    const right = new THREE.Vector3().crossVectors(viewDir, this.camera.up).normalize();
+    if (right.lengthSq() < 1e-10) {
+      right.set(1, 0, 0);
+    }
+
+    const qYaw = new THREE.Quaternion().setFromAxisAngle(this.camera.up.clone().normalize(), yaw);
+    const qPitch = new THREE.Quaternion().setFromAxisAngle(right, pitch);
+    const q = new THREE.Quaternion().multiplyQuaternions(qPitch, qYaw);
+
+    offset.applyQuaternion(q);
+    this.camera.up.applyQuaternion(q).normalize();
+
+    this.camera.position.copy(this.target).add(offset);
+    this.camera.lookAt(this.target);
+  }
+
+  _pan(deltaX, deltaY) {
+    const element = this.domElement;
+    const offset = this.camera.position.clone().sub(this.target);
+    const targetDistance = offset.length() * Math.tan((this.camera.fov * 0.5) * Math.PI / 180.0);
+
+    const panX = (2 * deltaX * targetDistance / element.clientHeight) * this.panSpeed;
+    const panY = (2 * deltaY * targetDistance / element.clientHeight) * this.panSpeed;
+
+    const viewDir = this.target.clone().sub(this.camera.position).normalize();
+    const right = new THREE.Vector3().crossVectors(viewDir, this.camera.up).normalize();
+    const up = this.camera.up.clone().normalize();
+
+    const pan = right.multiplyScalar(-panX).add(up.multiplyScalar(panY));
+    this.camera.position.add(pan);
+    this.target.add(pan);
+    this.center = this.target;
+    this.camera.lookAt(this.target);
+  }
+
+  _dollyByScale(scale) {
+    const offset = this.camera.position.clone().sub(this.target);
+    let distance = offset.length() * scale;
+    distance = Math.max(this.minDistance, Math.min(this.maxDistance, distance));
+
+    offset.normalize().multiplyScalar(distance);
+    this.camera.position.copy(this.target).add(offset);
+    this.camera.lookAt(this.target);
+  }
+}
+
 class Viewer {
 
   constructor() {
@@ -223,16 +446,23 @@ class Viewer {
         this.params.cameraNear = this.extent; // auto calculate suitable near
       }
       this.camera = new THREE.PerspectiveCamera(this.params.cameraFovy, window.innerWidth / window.innerHeight, this.params.cameraNear, this.params.cameraFar);
+
+      // Place camera in front of the object (+Z), not on diagonal.
+      // Distance is computed from FOV so the object fits the initial view.
+      const fitDistance = (this.extent * 0.5) / Math.tan(THREE.MathUtils.degToRad(this.params.cameraFovy * 0.5));
+      const cameraDistance = fitDistance * 1.2; // small margin
       var cameraPos = new THREE.Vector3(
-        this.extent + this.center.x, 
-        this.extent + this.center.y, 
-        this.extent + this.center.z
+        this.center.x,
+        this.center.y,
+        this.center.z + cameraDistance
       );
       this.camera.position.copy(cameraPos);
       this.camera.up.set(0, 1, 0);
-      this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+
+      this.controls = new FreeOrbitControls(this.camera, this.renderer.domElement);
       this.controls.target.copy(this.center);
-      this.controls.enableDamping = true;
+      this.controls.center = this.controls.target;
+      this.controls.update();
       
       // init helpers
       this.axisHelper = new THREE.AxesHelper(this.extent);
